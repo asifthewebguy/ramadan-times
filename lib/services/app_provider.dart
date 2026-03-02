@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/prayer_time_model.dart';
 import '../services/prayer_time_service.dart';
 import '../services/location_service.dart';
+import '../services/notification_service.dart';
 import '../utils/constants.dart';
 
 enum AppStatus { loading, ready, locationError, calculationError }
@@ -34,6 +35,11 @@ class AppProvider extends ChangeNotifier {
   bool _notifEnabled = true;
   int _sehriReminderMin = 30;
   bool _iftarAlert = true;
+  bool _onboardingDone = false;
+  // Per-prayer alert toggles (all off by default)
+  final Map<String, bool> _perPrayerAlerts = {
+    'Fajr': false, 'Dhuhr': false, 'Asr': false, 'Maghrib': false, 'Isha': false,
+  };
 
   // Getters
   AppStatus get status => _status;
@@ -55,6 +61,8 @@ class AppProvider extends ChangeNotifier {
   bool get notifEnabled => _notifEnabled;
   int get sehriReminderMin => _sehriReminderMin;
   bool get iftarAlert => _iftarAlert;
+  bool get onboardingDone => _onboardingDone;
+  Map<String, bool> get perPrayerAlerts => Map.unmodifiable(_perPrayerAlerts);
 
   /// Full initialization: load settings → get location → calculate times.
   Future<void> initialize() async {
@@ -76,6 +84,7 @@ class AppProvider extends ChangeNotifier {
     }
 
     _calculateTimes();
+    _scheduleNotifications();
     _status = AppStatus.ready;
     notifyListeners();
   }
@@ -170,6 +179,23 @@ class AppProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppConstants.keyIftarAlert, value);
     notifyListeners();
+    _scheduleNotifications();
+  }
+
+  void setPerPrayerAlert(String prayerName, bool value) async {
+    _perPrayerAlerts[prayerName] = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('per_prayer_${prayerName.toLowerCase()}', value);
+    notifyListeners();
+    _scheduleNotifications();
+  }
+
+  Future<void> completeOnboarding() async {
+    _onboardingDone = true;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyOnboardingDone, true);
+    _scheduleNotifications();
+    notifyListeners();
   }
 
   void _calculateTimes() {
@@ -213,6 +239,11 @@ class AppProvider extends ChangeNotifier {
     _notifEnabled = prefs.getBool(AppConstants.keyNotifEnabled) ?? true;
     _sehriReminderMin = prefs.getInt(AppConstants.keySehriReminderMin) ?? 30;
     _iftarAlert = prefs.getBool(AppConstants.keyIftarAlert) ?? true;
+    _onboardingDone = prefs.getBool(AppConstants.keyOnboardingDone) ?? false;
+    for (final name in AppConstants.fardNames) {
+      _perPrayerAlerts[name] =
+          prefs.getBool('per_prayer_${name.toLowerCase()}') ?? false;
+    }
 
     // Load cached location if exists
     final lat = prefs.getDouble(AppConstants.keyLat);
@@ -223,6 +254,29 @@ class AppProvider extends ChangeNotifier {
       _lng = lng;
       _city = city ?? AppConstants.defaultCity;
     }
+  }
+
+  void _scheduleNotifications() {
+    // Build the next 7 days of prayer times for scheduling
+    final now = DateTime.now();
+    final sevenDays = List.generate(7, (i) {
+      final date = now.add(Duration(days: i));
+      return _prayerService.getPrayerTimes(
+        lat: _lat,
+        lng: _lng,
+        date: date,
+        calcMethodName: _calcMethod,
+        madhab: _madhab,
+      );
+    });
+
+    NotificationService.scheduleAll(
+      upcomingDays: sevenDays,
+      notifEnabled: _notifEnabled,
+      sehriReminderMin: _sehriReminderMin,
+      iftarAlert: _iftarAlert,
+      perPrayerAlerts: _perPrayerAlerts,
+    );
   }
 
   String _locationErrorMessage(LocationError error) {

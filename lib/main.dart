@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'models/prayer_log_model.dart';
 import 'services/app_provider.dart';
+import 'services/notification_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/timetable_screen.dart';
 import 'screens/qibla_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'utils/theme.dart';
 import 'utils/constants.dart';
 
@@ -20,7 +22,7 @@ Future<void> main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Status bar: transparent on dark background
+  // Status bar styling
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
@@ -32,6 +34,9 @@ Future<void> main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(PrayerLogModelAdapter());
   await Hive.openBox<PrayerLogModel>(AppConstants.hiveBoxPrayerLog);
+
+  // Initialise notification service
+  await NotificationService.initialize();
 
   runApp(
     ChangeNotifierProvider(
@@ -50,8 +55,33 @@ class RamadanTimesApp extends StatelessWidget {
       title: 'Ramadan Times',
       theme: AppTheme.dark,
       debugShowCheckedModeBanner: false,
-      home: const _NavShell(),
+      home: const _AppRouter(),
     );
+  }
+}
+
+/// Routes to OnboardingScreen on first launch, NavShell thereafter.
+class _AppRouter extends StatelessWidget {
+  const _AppRouter();
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<AppProvider>();
+
+    // Show loading until provider finishes initialising
+    if (provider.status == AppStatus.loading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.gold),
+        ),
+      );
+    }
+
+    if (!provider.onboardingDone) {
+      return const OnboardingScreen();
+    }
+
+    return const _NavShell();
   }
 }
 
