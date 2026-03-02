@@ -112,6 +112,14 @@ class SettingsScreen extends StatelessWidget {
               value: provider.iftarAlert,
               onChanged: provider.setIftarAlert,
             ),
+            _SectionHeader('PER-PRAYER ALERTS'),
+            ...AppConstants.fardNames.map((name) => _SwitchTile(
+                  title: '$name Alert',
+                  subtitle: 'Notify at $name prayer time',
+                  icon: Icons.notifications_active_outlined,
+                  value: provider.perPrayerAlerts[name] ?? false,
+                  onChanged: (v) => provider.setPerPrayerAlert(name, v),
+                )),
           ],
 
           const SizedBox(height: 32),

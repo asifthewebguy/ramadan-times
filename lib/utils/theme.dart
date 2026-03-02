@@ -58,6 +58,12 @@ class AppTheme {
         bodyColor: AppColors.textPrimary,
         displayColor: AppColors.textPrimary,
       ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       dividerColor: AppColors.primaryLight,
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(

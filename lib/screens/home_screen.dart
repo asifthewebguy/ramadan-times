@@ -70,10 +70,15 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
 
-        SliverToBoxAdapter(
+        // High-latitude warning (> 60°N or < 60°S)
+        if (provider.lat.abs() > 60.0)
+          SliverToBoxAdapter(child: _HighLatWarning(lat: provider.lat)),
+
+        // Countdown (RepaintBoundary isolates repaints from the rest of the tree)
+        const SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-            child: const CountdownTimer(),
+            padding: EdgeInsets.fromLTRB(16, 24, 16, 0),
+            child: RepaintBoundary(child: CountdownTimer()),
           ),
         ),
 
@@ -186,6 +191,38 @@ class HomeScreen extends StatelessWidget {
           prayerName: name,
           fardIndex: fardIndex,
         ),
+      ),
+    );
+  }
+}
+
+class _HighLatWarning extends StatelessWidget {
+  final double lat;
+  const _HighLatWarning({required this.lat});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_outlined,
+              color: Colors.orange, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Extreme latitude (${lat.toStringAsFixed(1)}°). '
+              'Prayer times may be estimated for your region.',
+              style: const TextStyle(color: Colors.orange, fontSize: 12),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -45,6 +45,16 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   hive_generator: ^2.0.1
   build_runner: ^2.4.12
+  flutter_native_splash: ^2.4.3
+
+# ── Native splash configuration ──────────────────────────────────────────────
+flutter_native_splash:
+  color: "#0D1B2A"
+  color_dark: "#0D1B2A"
+  android: true
+  ios: true
+  web: false
+  fullscreen: true
 
 flutter:
   uses-material-design: true
