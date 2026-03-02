@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
+import '../models/prayer_log_model.dart';
 import '../services/app_provider.dart';
+import '../services/prayer_log_service.dart';
+import '../screens/prayer_timer_screen.dart';
 import '../utils/theme.dart';
 import '../utils/constants.dart';
 import '../widgets/countdown_timer.dart';
 import '../widgets/prayer_time_card.dart';
+import '../widgets/prayer_tracker_grid.dart';
+import '../widgets/streak_widget.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -58,7 +64,7 @@ class HomeScreen extends StatelessWidget {
           actions: [
             IconButton(
               icon: const Icon(Icons.my_location, color: AppColors.textSecondary),
-              onPressed: () => _refreshLocation(context, provider),
+              onPressed: () => provider.initialize(),
               tooltip: 'Refresh location',
             ),
           ],
@@ -75,6 +81,39 @@ class HomeScreen extends StatelessWidget {
         if (today != null)
           SliverToBoxAdapter(
             child: _NextPrayerBanner(provider: provider),
+          ),
+
+        // Prayer tracker + streak (when feature enabled)
+        if (provider.prayerTimerEnabled)
+          SliverToBoxAdapter(
+            child: ValueListenableBuilder<Box<PrayerLogModel>>(
+              valueListenable: PrayerLogService.listenable,
+              builder: (context, box, _) {
+                final log = box.get(PrayerLogService.todayKey) ??
+                    PrayerLogModel.empty(PrayerLogService.todayKey);
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "TODAY'S PRAYERS",
+                        style: TextStyle(
+                          color: AppColors.textDim,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      PrayerTrackerGrid(dayLog: log),
+                      const SizedBox(height: 12),
+                      const StreakWidget(),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
 
         // Divider
@@ -126,7 +165,7 @@ class HomeScreen extends StatelessWidget {
                   isNext: isNext,
                   isPassed: isPassed,
                   tappable: isFard && provider.prayerTimerEnabled,
-                  onTap: () => _openPrayerTimer(context, name, index),
+                  onTap: () => _openPrayerTimer(context, name),
                 );
               },
               childCount: AppConstants.prayerNames.length,
@@ -138,17 +177,15 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _refreshLocation(BuildContext context, AppProvider provider) async {
-    await provider.initialize();
-  }
-
-  void _openPrayerTimer(BuildContext context, String name, int index) {
-    // Phase 3: push PrayerTimerScreen
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Prayer timer for $name coming in Phase 3'),
-        backgroundColor: AppColors.primaryLight,
-        duration: const Duration(seconds: 2),
+  void _openPrayerTimer(BuildContext context, String name) {
+    final fardIndex = AppConstants.fardNames.indexOf(name);
+    if (fardIndex < 0) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PrayerTimerScreen(
+          prayerName: name,
+          fardIndex: fardIndex,
+        ),
       ),
     );
   }
