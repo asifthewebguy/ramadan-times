@@ -2,7 +2,7 @@ name: ramadan_app
 description: "Ramadan Times — Accurate prayer times, Sehri & Iftar countdown, Qibla compass."
 publish_to: 'none'
 
-version: 1.0.0+2
+version: 1.0.0+3
 
 environment:
   sdk: ^3.11.0
