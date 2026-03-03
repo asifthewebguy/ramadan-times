@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ramadan Times</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0D1B2A;
+      --surface: #1B2838;
+      --card:    #1A2A3D;
+      --border:  #243447;
+      --gold:    #D4A853;
+      --gold-lt: #E8C97A;
+      --text:    #F5F5F5;
+      --text-sec:#B0BEC5;
+      --text-dim:#607D8B;
+      --green:   #2ECC71;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    a { color: var(--gold); text-decoration: none; }
+    a:hover { color: var(--gold-lt); text-decoration: underline; }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 48px 24px 40px;
+      text-align: center;
+    }
+
+    .app-icon {
+      width: 96px; height: 96px;
+      border-radius: 22px;
+      background: var(--card);
+      border: 2px solid var(--gold);
+      margin: 0 auto 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 48px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: -0.5px;
+    }
+
+    .tagline {
+      margin-top: 10px;
+      color: var(--text-sec);
+      font-size: 1.05rem;
+      max-width: 480px;
+      margin-left: auto; margin-right: auto;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      background: rgba(46, 204, 113, 0.15);
+      color: var(--green);
+      border: 1px solid rgba(46, 204, 113, 0.4);
+    }
+
+    /* ── Main ── */
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+
+    /* ── Features ── */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .feature-card .icon {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+
+    .feature-card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--gold);
+      margin-bottom: 6px;
+    }
+
+    .feature-card p {
+      font-size: 0.85rem;
+      color: var(--text-sec);
+    }
+
+    /* ── Privacy section ── */
+    .privacy-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 32px;
+    }
+
+    .privacy-box h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .privacy-box p {
+      color: var(--text-sec);
+      font-size: 0.93rem;
+      margin-bottom: 16px;
+    }
+
+    .privacy-box a.btn {
+      display: inline-block;
+      padding: 10px 22px;
+      background: rgba(212, 168, 83, 0.12);
+      border: 1.5px solid var(--gold);
+      border-radius: 8px;
+      color: var(--gold);
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    .privacy-box a.btn:hover {
+      background: rgba(212, 168, 83, 0.22);
+      text-decoration: none;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 0.82rem;
+    }
+
+    footer a { color: var(--text-dim); }
+    footer a:hover { color: var(--gold); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="app-icon">🕌</div>
+    <h1>Ramadan Times</h1>
+    <p class="tagline">
+      Accurate prayer times, Sehri &amp; Iftar countdown, Qibla compass,
+      and prayer tracker — all offline, all private.
+    </p>
+    <span class="badge">Free · No Ads · No Tracking</span>
+  </header>
+
+  <main>
+
+    <div class="features">
+      <div class="feature-card">
+        <div class="icon">⏳</div>
+        <h3>Sehri &amp; Iftar Countdown</h3>
+        <p>Live countdown to the next Sehri and Iftar with a circular progress ring.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🕐</div>
+        <h3>Daily Prayer Times</h3>
+        <p>All 5 fard prayers plus Sunrise, calculated using 11 international methods.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🧭</div>
+        <h3>Qibla Compass</h3>
+        <p>Live compass pointing toward the Kaaba from anywhere in the world.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📅</div>
+        <h3>Monthly Timetable</h3>
+        <p>Full month prayer schedule at a glance, with today highlighted.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">⏱️</div>
+        <h3>Prayer Timer &amp; Tracker</h3>
+        <p>Time your salah, track daily completions, and view your streak.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔔</div>
+        <h3>Smart Notifications</h3>
+        <p>Sehri reminder, Iftar alert, and per-prayer notifications — all customisable.</p>
+      </div>
+    </div>
+
+    <div class="privacy-box">
+      <h2>Your Privacy</h2>
+      <p>
+        Ramadan Times is built with privacy as a core principle. All prayer time
+        calculations happen on your device using the <em>adhan</em> library.
+        We have no servers, collect no analytics, and display no advertisements.
+        Your prayer data never leaves your phone.
+      </p>
+      <a class="btn" href="privacy-policy.html">Read the Privacy Policy →</a>
+    </div>
+
+  </main>
+
+  <footer>
+    <p>
+      Ramadan Times &nbsp;·&nbsp;
+      <a href="https://github.com/asifthewebguy/ramadan-times" target="_blank" rel="noopener">
+        View on GitHub
+      </a>
+      &nbsp;·&nbsp;
+      <a href="privacy-policy.html">Privacy Policy</a>
+    </p>
+  </footer>
+
+</body>
+</html>
