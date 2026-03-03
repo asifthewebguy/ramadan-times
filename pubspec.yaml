@@ -46,6 +46,7 @@ dev_dependencies:
   hive_generator: ^2.0.1
   build_runner: ^2.4.12
   flutter_native_splash: ^2.4.3
+  flutter_launcher_icons: ^0.14.3
 
 # ── Native splash configuration ──────────────────────────────────────────────
 flutter_native_splash:
@@ -55,6 +56,16 @@ flutter_native_splash:
   ios: true
   web: false
   fullscreen: true
+
+# ── Launcher icon configuration ───────────────────────────────────────────────
+# Drop your 1024×1024 PNG at assets/images/app_icon.png, then run:
+#   dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
+  adaptive_icon_background: "#0D1B2A"
+  min_sdk_android: 21
 
 flutter:
   uses-material-design: true
