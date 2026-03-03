@@ -6,8 +6,8 @@
 
     <!-- Notification permissions -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- USE_EXACT_ALARM (API 33+): no user prompt required; used for prayer time alerts -->
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- SCHEDULE_EXACT_ALARM: user grants once via Settings; used for prayer time alerts -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Compass sensor -->

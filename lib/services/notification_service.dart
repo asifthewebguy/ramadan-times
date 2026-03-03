@@ -35,12 +35,13 @@ class NotificationService {
           android: androidSettings, iOS: iosSettings),
     );
 
-    // Request Android 13+ notification permission
     if (Platform.isAndroid) {
-      await _plugin
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.requestNotificationsPermission();
+      final android = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      // Request POST_NOTIFICATIONS (Android 13+)
+      await android?.requestNotificationsPermission();
+      // Request SCHEDULE_EXACT_ALARM — opens system settings page once
+      await android?.requestExactAlarmsPermission();
     }
 
     _initialized = true;
@@ -136,13 +137,25 @@ class NotificationService {
       const details = NotificationDetails(
           android: androidDetails, iOS: iosDetails);
 
+      // Use exact scheduling if SCHEDULE_EXACT_ALARM is granted,
+      // fall back to inexact (within ~1 min) if not.
+      final canExact = Platform.isAndroid
+          ? await _plugin
+                  .resolvePlatformSpecificImplementation<
+                      AndroidFlutterLocalNotificationsPlugin>()
+                  ?.canScheduleExactNotifications() ??
+              false
+          : true;
+
       await _plugin.zonedSchedule(
         id,
         title,
         body,
         _toTZ(at),
         details,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: canExact
+            ? AndroidScheduleMode.exactAllowWhileIdle
+            : AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
       );
