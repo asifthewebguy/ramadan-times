@@ -1,4 +1,4 @@
-package com.asifchowdhury.ramadan_app
+package com.asifchowdhury.ramadantimes
 
 import io.flutter.embedding.android.FlutterActivity
 
