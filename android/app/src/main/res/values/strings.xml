@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ramadan Times</string>
+    <string name="widget_description_small">Shows the next prayer time at a glance.</string>
+    <string name="widget_description_medium">Shows all 5 daily prayer times.</string>
+</resources>

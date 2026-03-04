@@ -97,7 +97,14 @@ class SettingsScreen extends StatelessWidget {
             value: provider.adhanEnabled,
             onChanged: provider.setAdhanEnabled,
           ),
-          if (provider.adhanEnabled)
+          if (provider.adhanEnabled) ...[
+            _DropdownTile<String>(
+              title: 'Adhan Voice',
+              icon: Icons.record_voice_over_outlined,
+              value: provider.adhanVoice,
+              items: AppConstants.adhanVoices.keys.toList(),
+              onChanged: (v) => provider.setAdhanVoice(v!),
+            ),
             ListTile(
               leading: const Icon(Icons.play_circle_outline,
                   color: AppColors.gold, size: 22),
@@ -108,6 +115,7 @@ class SettingsScreen extends StatelessWidget {
                       color: AppColors.textSecondary, fontSize: 13)),
               onTap: () => AdhanService.instance.playAdhan(),
             ),
+          ],
 
           _SectionHeader('NOTIFICATIONS'),
           _SwitchTile(
@@ -147,7 +155,7 @@ class SettingsScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Ramadan Times v1.1.0\nAll prayer calculations are performed locally.\nNo data leaves your device.',
+              'Ramadan Times v1.2.0\nAll prayer calculations are performed locally.\nNo data leaves your device.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textDim,

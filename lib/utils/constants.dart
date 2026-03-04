@@ -27,6 +27,14 @@ class AppConstants {
   static const String keyPrayerTimerHaptic = 'prayer_timer_haptic';
   static const String keyPrayerTimerShowDuration = 'prayer_timer_show_duration';
   static const String keyAdhanEnabled = 'adhan_enabled';
+  static const String keyAdhanVoice = 'adhan_voice';
+
+  // Adhan voice options — value is the asset path suffix
+  static const Map<String, String> adhanVoices = {
+    'Mishary Rashid': 'sounds/adhan.mp3',
+    'Makkah': 'sounds/adhan_makkah.mp3',
+    'Madinah': 'sounds/adhan_madinah.mp3',
+  };
 
   // Hive box names
   static const String hiveBoxPrayerLog = 'prayer_log';

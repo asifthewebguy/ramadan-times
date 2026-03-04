@@ -50,6 +50,32 @@
             </intent-filter>
         </receiver>
 
+        <!-- Home screen widget — small (2×1): next prayer -->
+        <receiver
+            android:name=".PrayerWidgetSmall"
+            android:exported="true"
+            android:label="Prayer Times (Small)">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/prayer_widget_info_small" />
+        </receiver>
+
+        <!-- Home screen widget — medium (4×2): all 5 prayers -->
+        <receiver
+            android:name=".PrayerWidgetMedium"
+            android:exported="true"
+            android:label="Prayer Times (Medium)">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/prayer_widget_info_medium" />
+        </receiver>
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

@@ -2,7 +2,7 @@ name: ramadan_app
 description: "Ramadan Times — Accurate prayer times, Sehri & Iftar countdown, Qibla compass."
 publish_to: 'none'
 
-version: 1.1.0+4
+version: 1.2.0+5
 
 environment:
   sdk: ^3.11.0
@@ -42,6 +42,12 @@ dependencies:
   shimmer: ^3.0.0
   audioplayers: ^6.1.0
 
+  # Home screen widget
+  home_widget: ^0.7.0
+
+  # Share
+  share_plus: ^10.1.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -77,4 +83,5 @@ flutter:
   assets:
     - assets/images/
     - assets/sounds/
+    - assets/data/
 

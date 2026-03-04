@@ -15,6 +15,9 @@ import '../widgets/countdown_timer.dart';
 import '../widgets/prayer_time_card.dart';
 import '../widgets/prayer_tracker_grid.dart';
 import '../widgets/streak_widget.dart';
+import '../widgets/ayah_card.dart';
+import '../widgets/dua_day_card.dart';
+import '../widgets/ramadan_countdown_card.dart';
 
 // English Islamic month names
 const _kHijriMonths = [
@@ -252,6 +255,15 @@ class _HomeScreenState extends State<HomeScreen> {
           SliverToBoxAdapter(
             child: _NextPrayerBanner(provider: provider),
           ),
+
+        // Ramadan countdown (hidden during Ramadan)
+        const SliverToBoxAdapter(child: RamadanCountdownCard()),
+
+        // Ayah of the Day
+        const SliverToBoxAdapter(child: AyahCard()),
+
+        // Dua of the Day
+        const SliverToBoxAdapter(child: DuaDayCard()),
 
         // Prayer tracker + streak
         if (provider.prayerTimerEnabled)

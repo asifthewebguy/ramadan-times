@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hijri/hijri_calendar.dart';
 import '../models/prayer_time_model.dart';
 import '../services/prayer_time_service.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
 import '../services/adhan_service.dart';
+import '../services/widget_service.dart';
 import '../utils/constants.dart';
 
 enum AppStatus { loading, ready, locationError, calculationError }
@@ -37,6 +39,7 @@ class AppProvider extends ChangeNotifier {
   int _sehriReminderMin = 30;
   bool _iftarAlert = true;
   bool _adhanEnabled = false;
+  String _adhanVoice = 'Mishary Rashid';
   bool _onboardingDone = false;
   // Per-prayer alert toggles (all off by default)
   final Map<String, bool> _perPrayerAlerts = {
@@ -64,6 +67,7 @@ class AppProvider extends ChangeNotifier {
   int get sehriReminderMin => _sehriReminderMin;
   bool get iftarAlert => _iftarAlert;
   bool get adhanEnabled => _adhanEnabled;
+  String get adhanVoice => _adhanVoice;
   bool get onboardingDone => _onboardingDone;
   Map<String, bool> get perPrayerAlerts => Map.unmodifiable(_perPrayerAlerts);
 
@@ -72,6 +76,15 @@ class AppProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppConstants.keyAdhanEnabled, value);
     AdhanService.instance.setEnabled(value);
+    notifyListeners();
+  }
+
+  void setAdhanVoice(String voiceName) async {
+    _adhanVoice = voiceName;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConstants.keyAdhanVoice, voiceName);
+    final assetPath = AppConstants.adhanVoices[voiceName] ?? 'sounds/adhan.mp3';
+    AdhanService.instance.setVoice(assetPath);
     notifyListeners();
   }
 
@@ -97,6 +110,8 @@ class AppProvider extends ChangeNotifier {
     _calculateTimes();
     _scheduleNotifications();
     AdhanService.instance.setEnabled(_adhanEnabled);
+    AdhanService.instance.setVoice(
+        AppConstants.adhanVoices[_adhanVoice] ?? 'sounds/adhan.mp3');
     AdhanService.instance.startMonitoring();
     _status = AppStatus.ready;
     notifyListeners();
@@ -241,6 +256,20 @@ class AppProvider extends ChangeNotifier {
     // Feed today's fard prayer times to the Adhan service
     if (_todayTimes != null) {
       AdhanService.instance.updatePrayerTimes(_todayTimes!.fardTimes);
+
+      // Update home screen widgets
+      final h = HijriCalendar.now();
+      const months = [
+        'Muharram', 'Safar', "Rabi' I", "Rabi' II",
+        'Jumada I', 'Jumada II', 'Rajab', "Sha'ban",
+        'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah',
+      ];
+      final hijriDate = '${h.hDay} ${months[h.hMonth - 1]} ${h.hYear} AH';
+      WidgetService.update(
+        today: _todayTimes!,
+        formatTime: formatTime,
+        hijriDate: hijriDate,
+      );
     }
   }
 
@@ -258,6 +287,7 @@ class AppProvider extends ChangeNotifier {
     _sehriReminderMin = prefs.getInt(AppConstants.keySehriReminderMin) ?? 30;
     _iftarAlert = prefs.getBool(AppConstants.keyIftarAlert) ?? true;
     _adhanEnabled = prefs.getBool(AppConstants.keyAdhanEnabled) ?? false;
+    _adhanVoice = prefs.getString(AppConstants.keyAdhanVoice) ?? 'Mishary Rashid';
     _onboardingDone = prefs.getBool(AppConstants.keyOnboardingDone) ?? false;
     for (final name in AppConstants.fardNames) {
       _perPrayerAlerts[name] =

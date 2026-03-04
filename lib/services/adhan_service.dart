@@ -16,6 +16,12 @@ class AdhanService {
   List<DateTime> _prayerTimes = [];
   DateTime? _lastPlayedAt;
   bool _enabled = false;
+  String _assetPath = 'sounds/adhan.mp3';
+
+  /// Set the audio asset to play (e.g. 'sounds/adhan_makkah.mp3').
+  void setVoice(String assetPath) {
+    _assetPath = assetPath;
+  }
 
   /// Update the list of prayer DateTimes to watch.
   void updatePrayerTimes(List<DateTime> times) {
@@ -63,7 +69,7 @@ class AdhanService {
   Future<void> playAdhan() async {
     try {
       await _player.stop();
-      await _player.play(AssetSource('sounds/adhan.mp3'));
+      await _player.play(AssetSource(_assetPath));
     } catch (e) {
       debugPrint('AdhanService: playback failed — $e');
     }
