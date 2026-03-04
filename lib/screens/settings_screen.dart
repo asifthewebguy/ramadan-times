@@ -147,7 +147,7 @@ class SettingsScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Ramadan Times v1.0.0\nAll prayer calculations are performed locally.\nNo data leaves your device.',
+              'Ramadan Times v1.1.0\nAll prayer calculations are performed locally.\nNo data leaves your device.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textDim,
