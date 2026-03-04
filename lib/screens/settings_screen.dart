@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/app_provider.dart';
+import '../services/adhan_service.dart';
 import '../services/location_service.dart';
 import '../utils/theme.dart';
 import '../utils/constants.dart';
@@ -87,6 +88,26 @@ class SettingsScreen extends StatelessWidget {
               onChanged: provider.setPrayerTimerShowDuration,
             ),
           ],
+
+          _SectionHeader('ADHAN'),
+          _SwitchTile(
+            title: 'Enable Adhan',
+            subtitle: 'Play call to prayer at each prayer time (app open)',
+            icon: Icons.surround_sound_outlined,
+            value: provider.adhanEnabled,
+            onChanged: provider.setAdhanEnabled,
+          ),
+          if (provider.adhanEnabled)
+            ListTile(
+              leading: const Icon(Icons.play_circle_outline,
+                  color: AppColors.gold, size: 22),
+              title: const Text('Test Adhan',
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 15)),
+              subtitle: const Text('Play once to preview',
+                  style: TextStyle(
+                      color: AppColors.textSecondary, fontSize: 13)),
+              onTap: () => AdhanService.instance.playAdhan(),
+            ),
 
           _SectionHeader('NOTIFICATIONS'),
           _SwitchTile(

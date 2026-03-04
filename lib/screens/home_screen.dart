@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hijri/hijri_calendar.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import '../models/prayer_log_model.dart';
 import '../services/app_provider.dart';
 import '../services/prayer_log_service.dart';
@@ -12,34 +16,185 @@ import '../widgets/prayer_time_card.dart';
 import '../widgets/prayer_tracker_grid.dart';
 import '../widgets/streak_widget.dart';
 
-class HomeScreen extends StatelessWidget {
+// English Islamic month names
+const _kHijriMonths = [
+  'Muharram', 'Safar', "Rabi' I", "Rabi' II",
+  'Jumada I', 'Jumada II', 'Rajab', "Sha'ban",
+  'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah',
+];
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  Timer? _gradientTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Refresh every minute so the gradient transitions at Fajr / Maghrib
+    _gradientTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _gradientTimer?.cancel();
+    super.dispose();
+  }
+
+  /// True during the daytime fasting window (Fajr → Maghrib).
+  bool _isDaytime(AppProvider provider) {
+    final today = provider.todayTimes;
+    if (today == null) return false;
+    final now = DateTime.now();
+    return now.isAfter(today.fajr) && now.isBefore(today.maghrib);
+  }
+
+  String _hijriDateString() {
+    final h = HijriCalendar.now();
+    final month = _kHijriMonths[h.hMonth - 1];
+    return '${h.hDay} $month ${h.hYear} AH';
+  }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
+    final daytime = _isDaytime(provider);
 
     return Scaffold(
-      body: SafeArea(
-        child: switch (provider.status) {
-          AppStatus.loading => const Center(
-              child: CircularProgressIndicator(color: AppColors.gold),
+      backgroundColor: AppColors.primaryDark,
+      body: Stack(
+        children: [
+          // ── Background: night blue gradient (always visible) ──────────────
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF0A1F40), AppColors.primaryDark],
+                  stops: [0.0, 0.55],
+                ),
+              ),
             ),
-          _ => _buildContent(context, provider),
-        },
+          ),
+
+          // ── Background: warm amber overlay (fades in during daytime) ──────
+          Positioned.fill(
+            child: AnimatedOpacity(
+              opacity: daytime ? 1.0 : 0.0,
+              duration: const Duration(seconds: 2),
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF2A1608), AppColors.primaryDark],
+                    stops: [0.0, 0.55],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // ── Islamic geometric star pattern (top header region) ────────────
+          Positioned(
+            top: 0, left: 0, right: 0, height: 200,
+            child: Opacity(
+              opacity: 0.045,
+              child: CustomPaint(painter: _GeometricPatternPainter()),
+            ),
+          ),
+
+          // ── Main content ─────────────────────────────────────────────────
+          SafeArea(
+            child: switch (provider.status) {
+              AppStatus.loading => _buildShimmer(),
+              _ => _buildContent(context, provider),
+            },
+          ),
+        ],
       ),
     );
   }
+
+  // ── Shimmer loading skeleton ─────────────────────────────────────────────
+
+  Widget _buildShimmer() {
+    return Shimmer.fromColors(
+      baseColor: AppColors.cardBg,
+      highlightColor: AppColors.primaryLight,
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // App bar skeleton
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Column(
+                  children: [
+                    Container(width: 140, height: 16,
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
+                    const SizedBox(height: 6),
+                    Container(width: 100, height: 11,
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6))),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Countdown circle skeleton
+            Center(
+              child: Container(
+                width: 210, height: 210,
+                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Next prayer banner skeleton
+            Container(
+              height: 52,
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+            ),
+            const SizedBox(height: 24),
+            // Section label skeleton
+            Container(width: 100, height: 10,
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6))),
+            const SizedBox(height: 12),
+            // Prayer row skeletons
+            for (int i = 0; i < 6; i++) ...[
+              Container(
+                height: 60,
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Main content ─────────────────────────────────────────────────────────
 
   Widget _buildContent(BuildContext context, AppProvider provider) {
     final today = provider.todayTimes;
 
     return CustomScrollView(
       slivers: [
-        // App bar
+        // App bar (transparent so gradient shows through)
         SliverAppBar(
           floating: true,
-          backgroundColor: AppColors.primaryDark,
+          backgroundColor: Colors.transparent,
           elevation: 0,
           title: Column(
             children: [
@@ -51,13 +206,19 @@ class HomeScreen extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              const SizedBox(height: 2),
+              Text(
+                _hijriDateString(),
+                style: TextStyle(
+                  color: AppColors.gold.withValues(alpha: 0.85),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               if (provider.locationError != null)
                 Text(
                   'Using cached location',
-                  style: const TextStyle(
-                    color: AppColors.textDim,
-                    fontSize: 11,
-                  ),
+                  style: const TextStyle(color: AppColors.textDim, fontSize: 10),
                 ),
             ],
           ),
@@ -70,25 +231,29 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
 
-        // High-latitude warning (> 60°N or < 60°S)
+        // High-latitude warning
         if (provider.lat.abs() > 60.0)
           SliverToBoxAdapter(child: _HighLatWarning(lat: provider.lat)),
 
-        // Countdown (RepaintBoundary isolates repaints from the rest of the tree)
-        const SliverToBoxAdapter(
+        // Countdown — wrapped in a glass card with subtle pattern behind it
+        SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(16, 24, 16, 0),
-            child: RepaintBoundary(child: CountdownTimer()),
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+            child: GlassCard(
+              borderRadius: 20,
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              child: RepaintBoundary(child: const CountdownTimer()),
+            ),
           ),
         ),
 
-        // Next prayer banner
+        // Next prayer banner (glass)
         if (today != null)
           SliverToBoxAdapter(
             child: _NextPrayerBanner(provider: provider),
           ),
 
-        // Prayer tracker + streak (when feature enabled)
+        // Prayer tracker + streak
         if (provider.prayerTimerEnabled)
           SliverToBoxAdapter(
             child: ValueListenableBuilder<Box<PrayerLogModel>>(
@@ -121,7 +286,7 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-        // Divider
+        // Divider with "PRAYER TIMES" label
         const SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -160,7 +325,6 @@ class HomeScreen extends StatelessWidget {
                 final time = times[index];
                 final isNext = next?.key == name;
                 final isPassed = time.isBefore(now);
-                // Sunrise is informational only; Fard prayers are tappable
                 final isFard = name != 'Sunrise';
 
                 return PrayerTimeCard(
@@ -196,6 +360,8 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+// ── Private widgets ───────────────────────────────────────────────────────────
+
 class _HighLatWarning extends StatelessWidget {
   final double lat;
   const _HighLatWarning({required this.lat});
@@ -212,8 +378,7 @@ class _HighLatWarning extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_outlined,
-              color: Colors.orange, size: 18),
+          const Icon(Icons.warning_amber_outlined, color: Colors.orange, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -230,7 +395,6 @@ class _HighLatWarning extends StatelessWidget {
 
 class _NextPrayerBanner extends StatelessWidget {
   final AppProvider provider;
-
   const _NextPrayerBanner({required this.provider});
 
   @override
@@ -241,39 +405,85 @@ class _NextPrayerBanner extends StatelessWidget {
     final next = today.nextPrayer(DateTime.now());
     if (next == null) return const SizedBox.shrink();
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.gold.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.notifications_active_outlined,
-              color: AppColors.gold, size: 18),
-          const SizedBox(width: 10),
-          Text(
-            'Next: ${next.key}',
-            style: const TextStyle(
-              color: AppColors.gold,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      child: GlassCard(
+        borderRadius: 12,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        tintColor: AppColors.gold.withValues(alpha: 0.10),
+        borderColor: AppColors.gold.withValues(alpha: 0.35),
+        child: Row(
+          children: [
+            const Icon(Icons.notifications_active_outlined,
+                color: AppColors.gold, size: 18),
+            const SizedBox(width: 10),
+            Text(
+              'Next: ${next.key}',
+              style: const TextStyle(
+                color: AppColors.gold,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          const Spacer(),
-          Text(
-            provider.formatTime(next.value),
-            style: const TextStyle(
-              color: AppColors.gold,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              fontFeatures: [FontFeature.tabularFigures()],
+            const Spacer(),
+            Text(
+              provider.formatTime(next.value),
+              style: const TextStyle(
+                color: AppColors.gold,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+}
+
+/// Tiles an Islamic 8-pointed star pattern at low opacity.
+class _GeometricPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.9;
+
+    const spacing = 52.0;
+    const outerR = 13.0;
+    const innerR = outerR * 0.42;
+
+    final cols = (size.width / spacing).ceil() + 2;
+    final rows = (size.height / spacing).ceil() + 2;
+
+    for (int row = 0; row < rows; row++) {
+      for (int col = 0; col < cols; col++) {
+        final cx = col * spacing + (row.isOdd ? spacing / 2 : 0);
+        final cy = row * spacing;
+        _drawStar(canvas, paint, Offset(cx, cy), outerR, innerR);
+      }
+    }
+  }
+
+  void _drawStar(Canvas canvas, Paint paint, Offset center, double outerR, double innerR) {
+    final path = Path();
+    for (int i = 0; i < 16; i++) {
+      final angle = i * math.pi / 8 - math.pi / 2;
+      final r = i.isEven ? outerR : innerR;
+      final x = center.dx + r * math.cos(angle);
+      final y = center.dy + r * math.sin(angle);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

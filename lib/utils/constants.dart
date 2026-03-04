@@ -26,6 +26,7 @@ class AppConstants {
   static const String keyPrayerTimerLogging = 'prayer_timer_logging';
   static const String keyPrayerTimerHaptic = 'prayer_timer_haptic';
   static const String keyPrayerTimerShowDuration = 'prayer_timer_show_duration';
+  static const String keyAdhanEnabled = 'adhan_enabled';
 
   // Hive box names
   static const String hiveBoxPrayerLog = 'prayer_log';

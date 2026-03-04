@@ -1,3 +1,4 @@
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -114,4 +115,51 @@ class AppTheme {
     color: AppColors.textSecondary,
     letterSpacing: 0.8,
   );
+}
+
+/// Frosted-glass card widget. Blurs whatever is behind it and applies a
+/// semi-transparent white tint — effective over the gradient background.
+class GlassCard extends StatelessWidget {
+  final Widget child;
+  final double borderRadius;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  final double blur;
+  final Color? tintColor;
+  final Color? borderColor;
+
+  const GlassCard({
+    super.key,
+    required this.child,
+    this.borderRadius = 12,
+    this.padding,
+    this.margin,
+    this.blur = 14,
+    this.tintColor,
+    this.borderColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: margin,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+          child: Container(
+            padding: padding,
+            decoration: BoxDecoration(
+              color: tintColor ?? Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(borderRadius),
+              border: Border.all(
+                color: borderColor ?? Colors.white.withValues(alpha: 0.11),
+              ),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
 }

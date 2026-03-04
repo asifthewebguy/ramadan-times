@@ -10,6 +10,7 @@ import 'screens/timetable_screen.dart';
 import 'screens/qibla_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/dhikr_screen.dart';
 import 'utils/theme.dart';
 import 'utils/constants.dart';
 
@@ -22,11 +23,9 @@ Future<void> main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Status bar styling
+  // Status bar styling (edge-to-edge: no deprecated color APIs)
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: AppColors.primaryMid,
     systemNavigationBarIconBrightness: Brightness.light,
   ));
 
@@ -99,6 +98,7 @@ class _NavShellState extends State<_NavShell> {
     HomeScreen(),
     TimetableScreen(),
     QiblaScreen(),
+    DhikrScreen(),
     SettingsScreen(),
   ];
 
@@ -127,6 +127,11 @@ class _NavShellState extends State<_NavShell> {
             icon: Icon(Icons.explore_outlined),
             activeIcon: Icon(Icons.explore),
             label: 'Qibla',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite_border),
+            activeIcon: Icon(Icons.favorite),
+            label: 'Dhikr',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings_outlined),

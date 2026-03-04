@@ -4,6 +4,7 @@ import '../models/prayer_time_model.dart';
 import '../services/prayer_time_service.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
+import '../services/adhan_service.dart';
 import '../utils/constants.dart';
 
 enum AppStatus { loading, ready, locationError, calculationError }
@@ -35,6 +36,7 @@ class AppProvider extends ChangeNotifier {
   bool _notifEnabled = true;
   int _sehriReminderMin = 30;
   bool _iftarAlert = true;
+  bool _adhanEnabled = false;
   bool _onboardingDone = false;
   // Per-prayer alert toggles (all off by default)
   final Map<String, bool> _perPrayerAlerts = {
@@ -61,8 +63,17 @@ class AppProvider extends ChangeNotifier {
   bool get notifEnabled => _notifEnabled;
   int get sehriReminderMin => _sehriReminderMin;
   bool get iftarAlert => _iftarAlert;
+  bool get adhanEnabled => _adhanEnabled;
   bool get onboardingDone => _onboardingDone;
   Map<String, bool> get perPrayerAlerts => Map.unmodifiable(_perPrayerAlerts);
+
+  void setAdhanEnabled(bool value) async {
+    _adhanEnabled = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyAdhanEnabled, value);
+    AdhanService.instance.setEnabled(value);
+    notifyListeners();
+  }
 
   /// Full initialization: load settings → get location → calculate times.
   Future<void> initialize() async {
@@ -85,6 +96,8 @@ class AppProvider extends ChangeNotifier {
 
     _calculateTimes();
     _scheduleNotifications();
+    AdhanService.instance.setEnabled(_adhanEnabled);
+    AdhanService.instance.startMonitoring();
     _status = AppStatus.ready;
     notifyListeners();
   }
@@ -224,6 +237,11 @@ class AppProvider extends ChangeNotifier {
       calcMethodName: _calcMethod,
       madhab: _madhab,
     );
+
+    // Feed today's fard prayer times to the Adhan service
+    if (_todayTimes != null) {
+      AdhanService.instance.updatePrayerTimes(_todayTimes!.fardTimes);
+    }
   }
 
   Future<void> _loadSettings() async {
@@ -239,6 +257,7 @@ class AppProvider extends ChangeNotifier {
     _notifEnabled = prefs.getBool(AppConstants.keyNotifEnabled) ?? true;
     _sehriReminderMin = prefs.getInt(AppConstants.keySehriReminderMin) ?? 30;
     _iftarAlert = prefs.getBool(AppConstants.keyIftarAlert) ?? true;
+    _adhanEnabled = prefs.getBool(AppConstants.keyAdhanEnabled) ?? false;
     _onboardingDone = prefs.getBool(AppConstants.keyOnboardingDone) ?? false;
     for (final name in AppConstants.fardNames) {
       _perPrayerAlerts[name] =
