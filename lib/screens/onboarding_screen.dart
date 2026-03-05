@@ -141,15 +141,12 @@ class _LocationPage extends StatefulWidget {
 }
 
 class _LocationPageState extends State<_LocationPage> {
-  bool _requesting = false;
-
-  Future<void> _requestLocation(BuildContext context) async {
-    setState(() => _requesting = true);
-    await context.read<AppProvider>().initialize();
-    if (mounted) {
-      setState(() => _requesting = false);
-      widget.onNext();
-    }
+  void _requestLocation(BuildContext context) {
+    // Fire-and-forget: permission dialog surfaces immediately, GPS fix + geocoding
+    // resolve in the background while the onboarding flow continues.
+    // The home screen shimmer covers the loading state.
+    context.read<AppProvider>().initialize();
+    widget.onNext();
   }
 
   @override
@@ -176,15 +173,14 @@ class _LocationPageState extends State<_LocationPage> {
           ),
           const SizedBox(height: 40),
           _PrimaryButton(
-            label: _requesting ? 'Detecting...' : 'Allow Location',
-            onPressed: _requesting ? null : () => _requestLocation(context),
-            loading: _requesting,
+            label: 'Allow Location',
+            onPressed: () => _requestLocation(context),
           ),
           const SizedBox(height: 12),
           TextButton(
             onPressed: widget.onNext,
             child: const Text(
-              'Skip — I\'ll set it manually later',
+              "Skip — I'll set it manually later",
               style: TextStyle(color: AppColors.textDim, fontSize: 13),
             ),
           ),
@@ -554,12 +550,10 @@ class _PageShell extends StatelessWidget {
 class _PrimaryButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
-  final bool loading;
 
   const _PrimaryButton({
     required this.label,
     required this.onPressed,
-    this.loading = false,
   });
 
   @override
@@ -577,14 +571,7 @@ class _PrimaryButton extends StatelessWidget {
           textStyle: const TextStyle(
               fontSize: 16, fontWeight: FontWeight.w700),
         ),
-        child: loading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.black),
-              )
-            : Text(label),
+        child: Text(label),
       ),
     );
   }
