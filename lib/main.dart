@@ -67,17 +67,19 @@ class _AppRouter extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
 
-    // Show loading until provider finishes initialising
+    // Onboarding check comes first — so calling initialize() during the
+    // location step doesn't reset the flow back to page 0.
+    if (!provider.onboardingDone) {
+      return const OnboardingScreen();
+    }
+
+    // Show loading spinner only after onboarding is complete.
     if (provider.status == AppStatus.loading) {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(color: AppColors.gold),
         ),
       );
-    }
-
-    if (!provider.onboardingDone) {
-      return const OnboardingScreen();
     }
 
     return const _NavShell();
