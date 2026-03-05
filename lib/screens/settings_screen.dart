@@ -381,23 +381,34 @@ class _DropdownTile<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.gold, size: 22),
-      title: Text(title,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15)),
-      trailing: DropdownButton<T>(
-        value: value,
-        dropdownColor: AppColors.primaryMid,
-        underline: const SizedBox.shrink(),
-        style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
-        items: items.map((item) {
-          final label = itemLabel != null ? itemLabel!(item) : item.toString();
-          return DropdownMenuItem<T>(
-            value: item,
-            child: Text(label, style: const TextStyle(color: AppColors.textPrimary)),
-          );
-        }).toList(),
-        onChanged: onChanged,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.gold, size: 22),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+            ),
+          ),
+          const SizedBox(width: 8),
+          DropdownButton<T>(
+            value: value,
+            dropdownColor: AppColors.primaryMid,
+            underline: const SizedBox.shrink(),
+            style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+            items: items.map((item) {
+              final label = itemLabel != null ? itemLabel!(item) : item.toString();
+              return DropdownMenuItem<T>(
+                value: item,
+                child: Text(label, style: const TextStyle(color: AppColors.textPrimary)),
+              );
+            }).toList(),
+            onChanged: onChanged,
+          ),
+        ],
       ),
     );
   }
