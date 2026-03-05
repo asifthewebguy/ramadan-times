@@ -7,6 +7,7 @@ import '../services/location_service.dart';
 import '../services/notification_service.dart';
 import '../services/adhan_service.dart';
 import '../services/widget_service.dart';
+import '../services/prayer_api_service.dart';
 import '../utils/constants.dart';
 
 enum AppStatus { loading, ready, locationError, calculationError }
@@ -40,6 +41,7 @@ class AppProvider extends ChangeNotifier {
   bool _iftarAlert = true;
   bool _adhanEnabled = false;
   String _adhanVoice = 'Mishary Rashid';
+  bool _useOnlineTimes = true;
   bool _onboardingDone = false;
   // Per-prayer alert toggles (all off by default)
   final Map<String, bool> _perPrayerAlerts = {
@@ -68,6 +70,7 @@ class AppProvider extends ChangeNotifier {
   bool get iftarAlert => _iftarAlert;
   bool get adhanEnabled => _adhanEnabled;
   String get adhanVoice => _adhanVoice;
+  bool get useOnlineTimes => _useOnlineTimes;
   bool get onboardingDone => _onboardingDone;
   Map<String, bool> get perPrayerAlerts => Map.unmodifiable(_perPrayerAlerts);
 
@@ -76,6 +79,14 @@ class AppProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppConstants.keyAdhanEnabled, value);
     AdhanService.instance.setEnabled(value);
+    notifyListeners();
+  }
+
+  void setUseOnlineTimes(bool value) async {
+    _useOnlineTimes = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyUseOnlineTimes, value);
+    await _calculateTimes();
     notifyListeners();
   }
 
@@ -107,7 +118,7 @@ class AppProvider extends ChangeNotifier {
       _locationError = 'Could not determine location. Using last known position.';
     }
 
-    _calculateTimes();
+    await _calculateTimes();
     _scheduleNotifications();
     AdhanService.instance.setEnabled(_adhanEnabled);
     AdhanService.instance.setVoice(
@@ -126,7 +137,7 @@ class AppProvider extends ChangeNotifier {
     await prefs.setDouble(AppConstants.keyLat, lat);
     await prefs.setDouble(AppConstants.keyLng, lng);
     await prefs.setString(AppConstants.keyCity, city);
-    _calculateTimes();
+    await _calculateTimes();
     notifyListeners();
   }
 
@@ -134,7 +145,7 @@ class AppProvider extends ChangeNotifier {
     _calcMethod = method;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConstants.keyCalcMethod, method);
-    _calculateTimes();
+    await _calculateTimes();
     notifyListeners();
   }
 
@@ -142,7 +153,7 @@ class AppProvider extends ChangeNotifier {
     _madhab = madhab;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConstants.keyMadhab, madhab);
-    _calculateTimes();
+    await _calculateTimes();
     notifyListeners();
   }
 
@@ -226,51 +237,85 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _calculateTimes() {
+  Future<void> _calculateTimes() async {
     final now = DateTime.now();
     final tomorrow = now.add(const Duration(days: 1));
 
-    _todayTimes = _prayerService.getPrayerTimes(
-      lat: _lat,
-      lng: _lng,
-      date: now,
-      calcMethodName: _calcMethod,
-      madhab: _madhab,
-    );
-    _tomorrowTimes = _prayerService.getPrayerTimes(
-      lat: _lat,
-      lng: _lng,
-      date: tomorrow,
-      calcMethodName: _calcMethod,
-      madhab: _madhab,
-    );
-    _monthlyTimes = _prayerService.getMonthlyTimes(
-      lat: _lat,
-      lng: _lng,
-      year: now.year,
-      month: now.month,
-      calcMethodName: _calcMethod,
-      madhab: _madhab,
-    );
+    if (_useOnlineTimes) {
+      final school = _madhab == 'Hanafi' ? 1 : 0;
+      final method = AppConstants.aladhanMethodMap[_calcMethod]
+          ?? AppConstants.aladhanDefaultMethod;
 
-    // Feed today's fard prayer times to the Adhan service
-    if (_todayTimes != null) {
-      AdhanService.instance.updatePrayerTimes(_todayTimes!.fardTimes);
-
-      // Update home screen widgets
-      final h = HijriCalendar.now();
-      const months = [
-        'Muharram', 'Safar', "Rabi' I", "Rabi' II",
-        'Jumada I', 'Jumada II', 'Rajab', "Sha'ban",
-        'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah',
-      ];
-      final hijriDate = '${h.hDay} ${months[h.hMonth - 1]} ${h.hYear} AH';
-      WidgetService.update(
-        today: _todayTimes!,
-        formatTime: formatTime,
-        hijriDate: hijriDate,
+      // Fetch this month from API (cached after first call)
+      final monthly = await PrayerApiService.getMonthlyTimes(
+        lat: _lat, lng: _lng,
+        year: now.year, month: now.month,
+        aladhanMethod: method, school: school,
       );
+
+      if (monthly != null && monthly.isNotEmpty) {
+        _monthlyTimes = monthly;
+        _todayTimes = monthly.firstWhere(
+          (m) => m.date.day == now.day,
+          orElse: () => _localTimes(now),
+        );
+
+        // Tomorrow may be in the next month
+        if (tomorrow.month == now.month) {
+          _tomorrowTimes = monthly.firstWhere(
+            (m) => m.date.day == tomorrow.day,
+            orElse: () => _localTimes(tomorrow),
+          );
+        } else {
+          final nextMonthly = await PrayerApiService.getMonthlyTimes(
+            lat: _lat, lng: _lng,
+            year: tomorrow.year, month: tomorrow.month,
+            aladhanMethod: method, school: school,
+          );
+          _tomorrowTimes = nextMonthly?.firstWhere(
+            (m) => m.date.day == tomorrow.day,
+            orElse: () => _localTimes(tomorrow),
+          ) ?? _localTimes(tomorrow);
+        }
+
+        _afterCalculate();
+        return;
+      }
+      // API returned null — fall through to local
     }
+
+    // Local (offline) calculation
+    _todayTimes = _localTimes(now);
+    _tomorrowTimes = _localTimes(tomorrow);
+    _monthlyTimes = _prayerService.getMonthlyTimes(
+      lat: _lat, lng: _lng,
+      year: now.year, month: now.month,
+      calcMethodName: _calcMethod, madhab: _madhab,
+    );
+    _afterCalculate();
+  }
+
+  PrayerTimeModel _localTimes(DateTime date) => _prayerService.getPrayerTimes(
+        lat: _lat, lng: _lng, date: date,
+        calcMethodName: _calcMethod, madhab: _madhab,
+      );
+
+  void _afterCalculate() {
+    if (_todayTimes == null) return;
+    AdhanService.instance.updatePrayerTimes(_todayTimes!.fardTimes);
+
+    final h = HijriCalendar.now();
+    const months = [
+      'Muharram', 'Safar', "Rabi' I", "Rabi' II",
+      'Jumada I', 'Jumada II', 'Rajab', "Sha'ban",
+      'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah',
+    ];
+    final hijriDate = '${h.hDay} ${months[h.hMonth - 1]} ${h.hYear} AH';
+    WidgetService.update(
+      today: _todayTimes!,
+      formatTime: formatTime,
+      hijriDate: hijriDate,
+    );
   }
 
   Future<void> _loadSettings() async {
@@ -288,6 +333,7 @@ class AppProvider extends ChangeNotifier {
     _iftarAlert = prefs.getBool(AppConstants.keyIftarAlert) ?? true;
     _adhanEnabled = prefs.getBool(AppConstants.keyAdhanEnabled) ?? false;
     _adhanVoice = prefs.getString(AppConstants.keyAdhanVoice) ?? 'Mishary Rashid';
+    _useOnlineTimes = prefs.getBool(AppConstants.keyUseOnlineTimes) ?? true;
     _onboardingDone = prefs.getBool(AppConstants.keyOnboardingDone) ?? false;
     for (final name in AppConstants.fardNames) {
       _perPrayerAlerts[name] =

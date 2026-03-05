@@ -28,6 +28,7 @@ class AppConstants {
   static const String keyPrayerTimerShowDuration = 'prayer_timer_show_duration';
   static const String keyAdhanEnabled = 'adhan_enabled';
   static const String keyAdhanVoice = 'adhan_voice';
+  static const String keyUseOnlineTimes = 'use_online_times';
 
   // Adhan voice options — value is the asset path suffix
   static const Map<String, String> adhanVoices = {
@@ -106,6 +107,24 @@ class AppConstants {
         return CalculationMethod.muslim_world_league.getParameters();
     }
   }
+
+  // AlAdhan API method numbers (for online prayer times)
+  static const Map<String, int> aladhanMethodMap = {
+    'University of Islamic Sciences, Karachi': 1,
+    'ISNA (North America)': 2,
+    'Muslim World League': 3,
+    'Umm Al-Qura, Makkah': 4,
+    'Egyptian General Authority': 5,
+    'Tehran': 7,
+    'Kuwait': 9,
+    'Qatar': 10,
+    'Singapore': 11,
+    'Turkey (Diyanet)': 13,
+    'Dubai': 16,
+  };
+
+  // Default AlAdhan method when online (Karachi — matches IFB Bangladesh)
+  static const int aladhanDefaultMethod = 1;
 
   // Sehri reminder options in minutes
   static const List<int> sehriReminderOptions = [15, 30, 45, 60];

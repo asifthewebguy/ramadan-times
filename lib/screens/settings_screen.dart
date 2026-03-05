@@ -17,6 +17,15 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
+          _SectionHeader('PRAYER TIMES SOURCE'),
+          _SwitchTile(
+            title: 'Online Prayer Times',
+            subtitle: 'Accurate times from AlAdhan.com (recommended)',
+            icon: Icons.cloud_outlined,
+            value: provider.useOnlineTimes,
+            onChanged: provider.setUseOnlineTimes,
+          ),
+
           _SectionHeader('LOCATION'),
           _SettingsTile(
             title: 'Current Location',
@@ -25,21 +34,24 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => _showLocationSheet(context, provider),
           ),
 
-          _SectionHeader('CALCULATION'),
-          _DropdownTile<String>(
-            title: 'Calculation Method',
-            icon: Icons.calculate_outlined,
-            value: provider.calcMethod,
-            items: AppConstants.calcMethodNames,
-            onChanged: (v) => provider.setCalcMethod(v!),
-          ),
-          _DropdownTile<String>(
-            title: 'Madhab (Asr)',
-            icon: Icons.menu_book_outlined,
-            value: provider.madhab,
-            items: const ["Shafi'i", 'Hanafi'],
-            onChanged: (v) => provider.setMadhab(v!),
-          ),
+          // Calculation method only relevant in offline mode
+          if (!provider.useOnlineTimes) ...[
+            _SectionHeader('CALCULATION'),
+            _DropdownTile<String>(
+              title: 'Calculation Method',
+              icon: Icons.calculate_outlined,
+              value: provider.calcMethod,
+              items: AppConstants.calcMethodNames,
+              onChanged: (v) => provider.setCalcMethod(v!),
+            ),
+            _DropdownTile<String>(
+              title: 'Madhab (Asr)',
+              icon: Icons.menu_book_outlined,
+              value: provider.madhab,
+              items: const ["Shafi'i", 'Hanafi'],
+              onChanged: (v) => provider.setMadhab(v!),
+            ),
+          ],
 
           _SectionHeader('DISPLAY'),
           _SwitchTile(
@@ -155,7 +167,9 @@ class SettingsScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Ramadan Times v1.2.0\nAll prayer calculations are performed locally.\nNo data leaves your device.',
+              provider.useOnlineTimes
+                  ? 'Ramadan Times v1.2.0\nPrayer times fetched from AlAdhan.com.\nYour location coordinates are sent to fetch accurate times.'
+                  : 'Ramadan Times v1.2.0\nAll prayer calculations are performed locally.\nNo data leaves your device.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.textDim,

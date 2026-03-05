@@ -48,6 +48,9 @@ dependencies:
   # Share
   share_plus: ^10.1.4
 
+  # HTTP for online prayer times (AlAdhan API)
+  http: ^1.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
